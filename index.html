@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battleship Online</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen active">
+            <div class="menu-container">
+                <h1 class="game-title">⚓ BATTLESHIP ONLINE</h1>
+                <p class="game-subtitle">Sink your opponent's fleet in this classic naval strategy game</p>
+                
+                <div class="menu-buttons">
+                    <button id="host-btn" class="btn btn--primary btn--lg">🏁 Host Game</button>
+                    <button id="join-btn" class="btn btn--secondary btn--lg">🤝 Join Game</button>
+                </div>
+                
+                <div id="room-display" class="room-info hidden">
+                    <h3>Share this room code:</h3>
+                    <div class="room-code" id="room-code"></div>
+                    <p class="room-status">Waiting for opponent to join...</p>
+                </div>
+                
+                <div id="join-form" class="join-form hidden">
+                    <h3>Enter room code:</h3>
+                    <div class="form-group">
+                        <input type="text" id="room-input" class="form-control" placeholder="Enter 6-digit code" maxlength="6">
+                    </div>
+                    <button id="connect-btn" class="btn btn--primary">Connect</button>
+                    <button id="back-btn" class="btn btn--outline">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ship Placement Phase -->
+        <div id="placement-screen" class="screen">
+            <div class="placement-container">
+                <div class="placement-header">
+                    <h2>Deploy Your Fleet</h2>
+                    <div class="connection-status">
+                        <span id="connection-indicator" class="status status--success">Connected</span>
+                        <span class="opponent-status" id="opponent-status">Opponent: Placing ships</span>
+                    </div>
+                </div>
+                
+                <div class="placement-content">
+                    <div class="ships-panel">
+                        <h3>Ships to Place</h3>
+                        <div class="ships-list" id="ships-list">
+                            <div class="ship-item" data-ship="carrier" data-size="5">
+                                <div class="ship-preview">
+                                    <div class="ship-cells">
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                    </div>
+                                </div>
+                                <span class="ship-name">Carrier (5)</span>
+                            </div>
+                            <div class="ship-item" data-ship="battleship" data-size="4">
+                                <div class="ship-preview">
+                                    <div class="ship-cells">
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                    </div>
+                                </div>
+                                <span class="ship-name">Battleship (4)</span>
+                            </div>
+                            <div class="ship-item" data-ship="cruiser" data-size="3">
+                                <div class="ship-preview">
+                                    <div class="ship-cells">
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                    </div>
+                                </div>
+                                <span class="ship-name">Cruiser (3)</span>
+                            </div>
+                            <div class="ship-item" data-ship="submarine" data-size="3">
+                                <div class="ship-preview">
+                                    <div class="ship-cells">
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                    </div>
+                                </div>
+                                <span class="ship-name">Submarine (3)</span>
+                            </div>
+                            <div class="ship-item" data-ship="destroyer" data-size="2">
+                                <div class="ship-preview">
+                                    <div class="ship-cells">
+                                        <div class="cell ship-cell"></div>
+                                        <div class="cell ship-cell"></div>
+                                    </div>
+                                </div>
+                                <span class="ship-name">Destroyer (2)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="placement-controls">
+                            <button id="rotate-btn" class="btn btn--secondary">🔄 Rotate</button>
+                            <button id="random-btn" class="btn btn--outline">🎲 Random</button>
+                            <button id="clear-btn" class="btn btn--outline">🗑️ Clear</button>
+                        </div>
+                        
+                        <button id="ready-btn" class="btn btn--primary btn--full-width" disabled>Ready for Battle!</button>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <h3>Your Fleet</h3>
+                        <div class="game-grid" id="placement-grid">
+                            <div class="grid-labels">
+                                <div class="corner"></div>
+                                <div class="col-labels">
+                                    <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+                                    <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+                                </div>
+                                <div class="row-labels">
+                                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                                    <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                                </div>
+                                <div class="grid-cells" id="placement-cells"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battle Phase -->
+        <div id="battle-screen" class="screen">
+            <div class="battle-container">
+                <div class="battle-header">
+                    <div class="turn-indicator">
+                        <span id="turn-status" class="status status--info">Your Turn</span>
+                        <span class="battle-info">Select coordinates to attack</span>
+                    </div>
+                    <div class="connection-status">
+                        <span id="battle-connection" class="status status--success">Connected</span>
+                    </div>
+                </div>
+                
+                <div class="battle-grids">
+                    <div class="grid-section">
+                        <h3>Enemy Waters</h3>
+                        <div class="game-grid enemy-grid" id="enemy-grid">
+                            <div class="grid-labels">
+                                <div class="corner"></div>
+                                <div class="col-labels">
+                                    <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+                                    <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+                                </div>
+                                <div class="row-labels">
+                                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                                    <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                                </div>
+                                <div class="grid-cells" id="enemy-cells"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-section">
+                        <h3>Your Fleet</h3>
+                        <div class="game-grid player-grid" id="player-grid">
+                            <div class="grid-labels">
+                                <div class="corner"></div>
+                                <div class="col-labels">
+                                    <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+                                    <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+                                </div>
+                                <div class="row-labels">
+                                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                                    <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                                </div>
+                                <div class="grid-cells" id="player-cells"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ship-status">
+                    <div class="fleet-status">
+                        <h4>Your Fleet Status</h4>
+                        <div id="player-ships" class="ships-status"></div>
+                    </div>
+                    <div class="fleet-status">
+                        <h4>Enemy Fleet Status</h4>
+                        <div id="enemy-ships" class="ships-status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen">
+            <div class="gameover-container">
+                <div class="gameover-content">
+                    <h1 id="gameover-title">Victory!</h1>
+                    <p id="gameover-message">You have successfully sunk all enemy ships!</p>
+                    <div class="gameover-buttons">
+                        <button id="play-again-btn" class="btn btn--primary btn--lg">Play Again</button>
+                        <button id="main-menu-btn" class="btn btn--secondary btn--lg">Main Menu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="message-container" class="message-container">
+            <div id="game-message" class="game-message hidden"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
